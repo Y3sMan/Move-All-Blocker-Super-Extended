@@ -1,0 +1,10 @@
+
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+    <string id="st_move_all_block">
+        <text>Blacklist from Move-All</text>
+    </string>
+    <string id="st_move_all_unblock">
+        <text>Remove from Move-All Blacklist</text>
+    </string>
+</string_table>

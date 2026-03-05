@@ -1,11 +1,15 @@
 -- Move All Blocker Extended, written by G_FLAT, based on a function from RavenAscendant's Sorting Plus
 -- Prevents the transfer of certain items when the player presses the inventory "Move all" button
+-- YesMan
+-- Added option to item context menu to dynamically block it from the Move-All Action
 
 local player_stash_open = false
 local BLOCKPUTALLFAVS = true
 local BLOCKPUTALLJUNK = true
 local BLOCKPUTALLPART = true
 local BLOCKPUTALLTASK = true
+
+
 
 -- stolen and modified from RavenAscendant's Sorting Plus
 local PUTALL = false
@@ -15,13 +19,18 @@ function ui_inventory.UIInventory:LMode_PutAll()
 	PUTALL = false
 end
 
+if ym_move_all_blocker_selector then
+	
+end
+
 -- stolen and modified from RavenAscendant's Sorting Plus
 function ActorMenu_on_item_before_move(flags, npc_id, obj, mode, bag)
 	flags.ret_value = flags.ret_value and not (PUTALL and (
 		BLOCKPUTALLFAVS and zzz_rax_sortingplus_mcm.is_favorite(obj:section()) or												-- block favorite items
 		BLOCKPUTALLJUNK and zzz_rax_sortingplus_mcm.is_junk(obj:section()) and player_stash_open or								-- block junk items
 		BLOCKPUTALLPART and unusable_parts_handler and unusable_parts_handler.is_unusable_part(obj) and player_stash_open or	-- block unusable part items
-		BLOCKPUTALLTASK and fetch_item_icon and fetch_item_icon.fetch_item_icon(nil, nil, obj:section())						-- block task items
+		BLOCKPUTALLTASK and fetch_item_icon and fetch_item_icon.fetch_item_icon(nil, nil, obj:section()) or						-- block task items
+		ym_move_all_blocker_selector.blocked_items[obj:section()]		
 	))
 end
 
