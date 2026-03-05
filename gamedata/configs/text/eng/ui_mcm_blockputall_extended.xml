@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="windows-1251"?>
+
+<string_table>
+
+	<string id="ui_mcm_menu_blockputall_extended">
+		<text>Move All Blocker Extended</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_title">
+		<text>Move All Blocker Extended</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_title_desc">
+		<text>Prevents you from transferring some items when pressing "Move all"</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_BLOCKPUTALLFAVS">
+		<text>Don't transfer favorites</text>
+	</string>
+	<string id="ui_mcm_blockputall_extended_BLOCKPUTALLFAVS_desc">
+		<text>Items marked as favorite won't be moved.</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_BLOCKPUTALLJUNK">
+		<text>Don't transfer junk into my stashes</text>
+	</string>
+	<string id="ui_mcm_blockputall_extended_BLOCKPUTALLJUNK_desc">
+		<text>Items marked as favorite won't be moved into player-made stashes.</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_BLOCKPUTALLTASK">
+		<text>Don't transfer task items</text>
+	</string>
+	<string id="ui_mcm_blockputall_extended_BLOCKPUTALLTASK_desc">
+		<text>Items required for tasks won't be moved.</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_BLOCKPUTALLPART">
+		<text>Don't transfer unusable parts into my stashes</text>
+	</string>
+	<string id="ui_mcm_blockputall_extended_BLOCKPUTALLPART_desc">
+		<text>Part items that are too damaged won't be moved into player-made stashes. My other mod, Unusable Parts Handler, is required.</text>
+	</string>
+
+</string_table>

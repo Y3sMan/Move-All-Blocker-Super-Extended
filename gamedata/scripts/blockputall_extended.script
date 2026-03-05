@@ -1,0 +1,70 @@
+-- Move All Blocker Extended, written by G_FLAT, based on a function from RavenAscendant's Sorting Plus
+-- Prevents the transfer of certain items when the player presses the inventory "Move all" button
+
+local player_stash_open = false
+local BLOCKPUTALLFAVS = true
+local BLOCKPUTALLJUNK = true
+local BLOCKPUTALLPART = true
+local BLOCKPUTALLTASK = true
+
+-- stolen and modified from RavenAscendant's Sorting Plus
+local PUTALL = false
+function ui_inventory.UIInventory:LMode_PutAll()
+	PUTALL = true
+	self:LMode_PutAllBase()
+	PUTALL = false
+end
+
+-- stolen and modified from RavenAscendant's Sorting Plus
+function ActorMenu_on_item_before_move(flags, npc_id, obj, mode, bag)
+	flags.ret_value = flags.ret_value and not (PUTALL and (
+		BLOCKPUTALLFAVS and zzz_rax_sortingplus_mcm.is_favorite(obj:section()) or												-- block favorite items
+		BLOCKPUTALLJUNK and zzz_rax_sortingplus_mcm.is_junk(obj:section()) and player_stash_open or								-- block junk items
+		BLOCKPUTALLPART and unusable_parts_handler and unusable_parts_handler.is_unusable_part(obj) and player_stash_open or	-- block unusable part items
+		BLOCKPUTALLTASK and fetch_item_icon and fetch_item_icon.fetch_item_icon(nil, nil, obj:section())						-- block task items
+	))
+end
+
+function GUI_on_show(name)
+	if (name ~= "UIInventory") then return end --return quickly if not the GUI we want
+
+	local id = ui_inventory.GUI.npc_id
+	local m_data = alife_storage_manager.get_state()
+	player_stash_open = is_player_stash_or_workshop(id, m_data)
+end
+
+function is_player_stash_or_workshop(id, m_data)
+
+	if m_data.player_created_stashes then
+		if m_data.player_created_stashes[id] then
+			return true
+		end
+	end
+
+	if m_data.workshop_stashes then
+		for k, v in pairs(m_data.workshop_stashes) do
+			if v == id then
+				return true
+			end
+		end
+	end
+
+	return false
+end
+
+function on_option_change()
+	if ui_mcm then
+		BLOCKPUTALLFAVS	= ui_mcm.get("blockputall_extended/BLOCKPUTALLFAVS")
+		BLOCKPUTALLJUNK	= ui_mcm.get("blockputall_extended/BLOCKPUTALLJUNK")
+		BLOCKPUTALLPART	= ui_mcm.get("blockputall_extended/BLOCKPUTALLPART")
+		BLOCKPUTALLTASK	= ui_mcm.get("blockputall_extended/BLOCKPUTALLTASK")
+	end
+end
+
+function on_game_start()
+	RegisterScriptCallback("on_option_change", on_option_change)
+	RegisterScriptCallback("ActorMenu_on_item_before_move", ActorMenu_on_item_before_move)
+	RegisterScriptCallback("GUI_on_show", GUI_on_show)
+	
+	on_option_change()
+end
