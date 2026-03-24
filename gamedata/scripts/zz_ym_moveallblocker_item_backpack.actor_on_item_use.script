@@ -1,0 +1,263 @@
+
+
+--#region DEBUG ----------------------------------------
+
+local modname = "Move All Blocker: item_backpack.actor_on_item_use Override"
+local DEBUG = true
+
+local function print_table (tbl, indent)
+    local g_type = type
+    if not indent then
+        indent = 0
+    end
+
+    utils_data.debug_write(string.rep(" ", indent) .. "{")
+
+    indent = indent + 2
+
+    if (g_type(tbl) == "userdata") then        
+        utils_data.debug_write("<userdata>,\n")
+    else
+        for k, v in pairs(tbl) do
+            local toprint = string.rep(" ", indent)
+
+            if (g_type(k) == "number") then
+                toprint = toprint .. "[" .. k .. "] = "
+            elseif (g_type(k) == "string") then
+                toprint = toprint  .. k ..  " = "
+            end
+
+            if (g_type(v) == "number") then
+                utils_data.debug_write(toprint .. v .. ",")
+            elseif (g_type(v) == "string") then
+                utils_data.debug_write(toprint .. "\"" .. v .. "\",")
+            elseif (g_type(v) == "table") then
+                utils_data.debug_write(toprint)
+                print_table(v, indent + 2)
+            else
+                utils_data.debug_write(toprint .. "\"" .. tostring(v) .. "\",")
+            end
+        end
+    end
+
+    utils_data.debug_write(string.rep(" ", indent-2) .. "}")
+end	
+
+
+--- Flattens a table of any nested status into a single string
+---@param o table
+---@return string 
+local function dump_table(o)
+   if type(o) == 'table' then
+      local s = '{ '
+      for k,v in pairs(o) do
+         if type(k) ~= 'number' then k = '"'..k..'"' end
+         s = s .. '['..k..'] = ' .. dump_table(v) .. ','
+      end
+      return s .. '} '
+   else
+      return tostring(o)
+   end
+end
+
+
+local function log(log_type, output, ...)
+    if not DEBUG then return end
+    if not output then
+        utils_data.debug_write("[" .. modname .. "] "..log_type..": ".."(nil)")
+        callstack()
+    elseif (type(output) == "table") then
+        utils_data.debug_write("[" .. modname .. "] "..log_type..": ")
+        debug_print_table(output)
+    else
+        -- pulled from _g.script
+        -- more var subbing
+        if (select('#', ...) >= 1) then
+            local i = 0
+            local p = { ... }
+            local function sr(a)
+                i = i + 1
+                if (type(p[i]) == 'userdata') then
+                    if (p[i].x and p[i].y) then
+                        return vec_to_str(p[i])
+                    end
+                    return 'userdata'
+                end
+                return tostring(p[i])
+            end
+            output = string.gsub(output, "%%s", sr)
+        end
+        printf("[" .. modname .. "] " .. log_type .. ": " .. output, ...)
+    end
+end
+
+function debug(output,...)
+    if not DEBUG then return end
+    log("DEBUG", output, ...)
+end
+
+function info(output,...)
+    log("INFO ", output, ...)
+end
+
+function warn(output,...)
+    log("WARN ", output, ...)
+end
+
+function error(output,...)
+    log("ERROR", output, ...)
+end
+
+function debug_tip(text, delay,...)
+    debug(text, ...)
+
+    local text = "[" .. modname .. "] "..tostring(text)
+
+    if not db.actor then
+        return
+    end
+    
+    local ico = "ui_inGame2_Dengi_otdani"
+    local text_color = utils_xml.get_color("pda_white")
+
+    text = text_color .. text
+
+    if delay == nil then
+        delay = 6000
+    end
+
+    news_manager.send_tip(db.actor, text, nil, ico, delay)
+end
+
+local function debug_print_table(caption, tbl_options)
+    if not DEBUG then return end
+
+    if not tbl_options then 
+        info("debug_print_table: tbl_options is nil")
+        return 
+    end
+
+    local tbl = {}
+    if type(tbl_options[1]) ~="table" then
+        tbl = tbl_options
+    else
+        tbl = tbl_options[1]
+    end
+
+    local indent = tbl_options[2] or 0
+
+    debug(caption)
+    print_table(tbl, indent)
+end
+
+local function info_print_table(caption, tbl_options)
+    if not DEBUG then return end
+    if not tbl_options then 
+        info("info_print_table: tbl_options is nil")
+        return 
+    end
+
+    local tbl = {}
+
+    if type(tbl_options[1]) ~="table" then
+        tbl = tbl_options
+    else
+        tbl = tbl_options[1]
+    end
+
+    local indent = tbl_options[2] or 0
+
+    info(caption)
+    print_table(tbl, indent)
+end
+
+
+
+function open_specific_mcm(path)
+    if not DEBUG then return end
+
+    if ui_mcm then
+        exec_console_cmd("main_menu")
+
+        local function open_mcm_event(path)
+            ui_mcm.open_to(path)
+            return true
+        end
+
+
+        if demonized_time_events then
+            demonized_time_events.CreateTimeEvent("ym_open_mcm", "open_mcm",1, open_mcm_event, path)
+        else
+            CreateTimeEvent("ym_open_mcm", "open_mcm",1, open_mcm_event, path)
+        end
+    end
+end
+
+--#endregion------------------------------------------------------------------
+
+
+--#region Quick Release (qrs)
+--[[
+Shamelessly Stolen from Toxox's Mini Mods Repo
+Go download it
+--]]
+
+orig_keep_items = nil
+
+keep_items_script = nil
+if actor_stash_patch then
+	keep_items_script = actor_stash_patch
+else
+	keep_items_script = item_backpack
+end
+
+
+
+local parent_script = ym_move_all_blocker_selector
+local orig_item_backpack_actor_on_item_use = item_backpack.actor_on_item_use
+info("Starting overrides")
+
+info("Overriding item_backpack.actor_on_item_use")
+item_backpack.actor_on_item_use = function(obj)
+    -- Check if we should keep favs
+    if (not obj) or (obj:section() ~= "itm_actor_backpack") then
+        orig_item_backpack_actor_on_item_use(obj)
+        return
+    end
+
+    -- Insert original keep items once
+    if not orig_keep_items then
+        orig_keep_items = {}
+        copy_table(orig_keep_items, keep_items_script.keep_items)
+    end
+
+    -- Assign original keep items
+    keep_items_script.keep_items = dup_table(orig_keep_items)
+
+    -- local new_blocked_items = merge_tables({cfg_blocked_items, blocked_items}) or blocked_items
+
+    -- Add current favorites
+    QUICKSTASH_BLOCKED_ITEMS = parent_script.QUICKSTASH_BLOCKED_ITEMS
+    QUICKSTASH_FAVORITES = parent_script.QUICKSTASH_FAVORITES
+    debug_print_table("blocked items:", parent_script.blocked_items)
+    if QUICKSTASH_BLOCKED_ITEMS then
+        for k, _ in pairs(parent_script.blocked_items) do
+            debug("k = " .. tostring(k))
+            debug("v = " .. tostring(_))
+            keep_items_script.keep_items[k] = true
+        end
+        debug_print_table("keep items:", keep_items_script.keep_items)
+    end
+
+    -- just added my own "Keep Favorites" right here, save a mod in my load order
+    if QUICKSTASH_FAVORITES or not zzz_rax_sortingplus_mcm then
+        for k, _ in pairs(zzz_rax_sortingplus_mcm.favorite_itms) do
+            debug("k = " .. tostring(k))
+            debug("v = " .. tostring(_))
+            keep_items_script.keep_items[k] = true
+        end
+    end
+
+    orig_item_backpack_actor_on_item_use(obj)
+end
+--#endregion
