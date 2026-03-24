@@ -1,0 +1,52 @@
+function on_mcm_load()
+    options = {
+        id = "blockputall_extended",
+        sh = true,
+        gr = {
+            {
+                id = "title",
+                type = "slide",
+                link = "ui_options_slider_economy_diff",
+                text = "ui_mcm_blockputall_extended_title",
+                size = {512, 50},
+                spacing = 20
+            },
+            {id = "title_desc", type = "desc", text = "ui_mcm_blockputall_extended_title_desc"},
+            {id = "BLOCKPUTALLFAVS", type = "check", val = 1, def = true},
+            {id = "BLOCKPUTALLJUNK", type = "check", val = 1, def = true},
+            {id = "BLOCKPUTALLTASK", type = "check", val = 1, def = true},
+            {id = "BLOCKPUTALLPART", type = "check", val = 1, def = true},
+
+            {
+                id = "YM_SUPER_BLOCK_title",
+                type = "slide",
+                link = "ui_options_slider_economy_diff",
+                text = "ui_mcm_moveblock_super_extended_title_desc",
+                size = {512, 50},
+                spacing = 20
+            },
+
+            {id = "super_block_enable", type = "check", val = 1, def = true},
+            { id = "QUICKSTASH_BLOCKED_ITEMS", type = "check", val = 1, def = false },
+            {id = "QUICKSTASH_FAVORITES", type = "check", val = 1, def = false},
+            {
+                id = "show_modifier",
+                type = "key_bind",
+                val = 2,
+                def = DIK_keys.DIK_LCONTROL
+            },
+            {
+                id = "toggle_keybind",
+                type = "key_bind",
+                val = 2,
+                def = DIK_keys.DIK_R
+            },
+            { id = "BLOCK_AMMO", type = "check", val = 1, def = true },
+            {id = "enable_config_file", type = "check", val = 1, def = false},
+            {id = "refresh_config", type = "check", val = 1, def = false},
+            {id = "reset_blocked_items", type = "check", val = 1, def = false},
+
+        }
+    }
+    return options
+end

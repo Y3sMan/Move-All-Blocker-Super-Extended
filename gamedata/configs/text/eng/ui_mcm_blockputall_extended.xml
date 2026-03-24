@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="windows-1251"?>
+
+<string_table>
+
+	<string id="ui_mcm_menu_blockputall_extended">
+		<text>Move All Blocker Super Extended</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_title">
+		<text>Move All Blocker Super Extended</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_title_desc">
+		<text>Prevents you from transferring some items when pressing "Move all"</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_BLOCKPUTALLFAVS">
+		<text>Don't transfer favorites</text>
+	</string>
+	<string id="ui_mcm_blockputall_extended_BLOCKPUTALLFAVS_desc">
+		<text>Items marked as favorite won't be moved.</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_BLOCKPUTALLJUNK">
+		<text>Don't transfer junk into my stashes</text>
+	</string>
+	<string id="ui_mcm_blockputall_extended_BLOCKPUTALLJUNK_desc">
+		<text>Items marked as favorite won't be moved into player-made stashes.</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_BLOCKPUTALLTASK">
+		<text>Don't transfer task items</text>
+	</string>
+	<string id="ui_mcm_blockputall_extended_BLOCKPUTALLTASK_desc">
+		<text>Items required for tasks won't be moved.</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_BLOCKPUTALLPART">
+		<text>Don't transfer unusable parts into my stashes</text>
+	</string>
+	<string id="ui_mcm_blockputall_extended_BLOCKPUTALLPART_desc">
+		<text>Part items that are too damaged won't be moved into player-made stashes. My other mod, Unusable Parts Handler, is required.</text>
+	</string>
+
+
+	<!-- YesMan   -->
+
+	<string id="ui_mcm_moveblock_super_extended_title_desc">
+		<text>Super Extended Options</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_super_block_enable">
+		<text>Enable Dynamic Block Option</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_super_block_enable_desc">
+		<text>Enable the Super Extended options</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_QUICKSTASH_BLOCKED_ITEMS">
+		<text>Keep Blacklisted Items After QRS</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_QUICKSTASH_BLOCKED_ITEMS_desc">
+		<text>Turn on to keep Blocked Items in inventory on QRS</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_QUICKSTASH_FAVORITES">
+		<text>Keep Favorite Items After QRS</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_QUICKSTASH_FAVORITES_desc">
+		<text>Turn on to keep Favorites in inventory on QRS</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_enable_config_file">
+		<text>Enable Config File</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_enable_config_file_desc">
+		<text>Enable the config file at "configs/items/settings/ym_move_all_blocked_items.ltx". Will combine with your already-blocked items in-game.</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_refresh_config">
+		<text>Refresh Config File</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_refresh_config_desc">
+		<text>Edit the config file "configs/items/settings/ym_move_all_blocked_items.ltx" then press this button to your permanently blocked items.</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_reset_blocked_items">
+		<text>%c[255,255,0,0]Reset Blocked Items%c[255,255,255,255]</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_reset_blocked_items_desc">
+		<text>%c[255,255,0,0]Reset all blocked items. No going back!%c[255,255,255,255] Does not affect items listed in config file.</text>
+	</string>
+
+
+	<string id="ui_mcm_blockputall_extended_show_modifier">
+		<text>Modifier</text>
+	</string>
+
+
+	<string id="ui_mcm_blockputall_extended_show_modifier_desc">
+		<text>Hold this key to show or hide the block option</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_toggle_keybind">
+		<text>Toggle Keybind</text>
+	</string>
+
+
+	<string id="ui_mcm_blockputall_extended_toggle_keybind_desc">
+		<text>Press this, while holding the keybind above, to toggle between always show and always hide the block option.\nMake sure to not be pressing anything else, or already have the item context menu open. Be patient, press the key, then right-click</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_BLOCK_AMMO">
+		<text>Auto Block Equipped Ammo</text>
+	</string>
+
+
+	<string id="ui_mcm_blockputall_extended_BLOCK_AMMO_desc">
+		<text>Enable to automatically block ammos for all your equipped weapons. Will overwrite any manually blocked ammos, if you equip then unequip the corresponding gun.</text>
+	</string>
+
+
+
+</string_table>
