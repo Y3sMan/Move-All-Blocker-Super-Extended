@@ -366,9 +366,19 @@ function get_all_ammos()
     return ammos
 end
 
-function block_equipped_ammos()
-    debug("equipped_ammos:")
-    print_table(equipped_ammos)
+---Unblock all ammos in the equipped_ammos cache
+---
+---Does not affect manually blocked ammos, unless they were added to the cache
+--- via a compatible equipped weapon
+function unblock_all_ammos()
+    for ammo, _ in pairs(equipped_ammos) do
+        set_blocked(ammo, false)
+    end
+
+    -- clear cache
+    empty_table(equipped_ammos)
+end
+
 
     local diffs = {}
     local ammos = get_all_ammos() or {}
@@ -666,6 +676,10 @@ function on_option_change(mcm)
 
     if reset_blocked_items then
         do_reset_blocked_items()
+    end
+
+    if not BLOCK_AMMO then
+        unblock_all_ammos()
     end
 
     -- recheck blocked status for ammos
