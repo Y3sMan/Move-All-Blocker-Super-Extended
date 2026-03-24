@@ -53,6 +53,7 @@ local function print_table (tbl, indent)
     utils_data.debug_write(string.rep(" ", indent-2) .. "}")
 end	
 
+
 --- Flattens a table of any nested status into a single string
 ---@param o table
 ---@return string 
@@ -77,7 +78,7 @@ local function log(log_type, output, ...)
         callstack()
     elseif (type(output) == "table") then
         utils_data.debug_write("[" .. modname .. "] "..log_type..": ")
-        print_table(output)
+        debug_print_table(output)
     else
         -- pulled from _g.script
         -- more var subbing
@@ -137,6 +138,35 @@ function debug_tip(text, delay,...)
 
     news_manager.send_tip(db.actor, text, nil, ico, delay)
 end
+
+local function debug_print_table(caption, tbl_options)
+
+    if not DEBUG then return end
+
+    local tbl = {}
+    if type(tbl_options[1]) ~="table" then
+        tbl = tbl_options
+    else
+        tbl = tbl_options[1]
+    end
+
+    local indent = tbl_options[2] or 0
+
+    debug(caption)
+    print_table(tbl, indent)
+end
+
+local function info_print_table(caption, tbl_options)
+    if not DEBUG then return end
+
+    local tbl = tbl_options[1] or {}
+    local indent = tbl_options[2] or 0
+
+    info(caption)
+    print_table(tbl, indent)
+end
+
+
 
 function open_specific_mcm(path)
     if not DEBUG then return end
@@ -355,7 +385,7 @@ function get_all_ammos()
     for slot, _ in g_pairs(slots) do
         local wpn = db.actor:item_in_slot(slot)
         if wpn and not (IsItem("fake_ammo_wpn",wpn:section())) then
-            local sec = wpn:section()
+            -- local sec = wpn:section()
             local ammo_list = get_ammo(nil, wpn:id(), true)
             for ammo, _ in g_pairs(ammo_list) do
                 ammos[ammo] = true
@@ -380,13 +410,25 @@ function unblock_all_ammos()
 end
 
 
+---Block all equipped ammos
+---
+---Runs on every item take and item equip and item drop
+function block_equipped_ammos(obj)
+
+    -- if autoblock ammos is disabled, skip
+    if not BLOCK_AMMO then return end
+
+    -- check if item being moved around is a weapon
+    if obj and not (IsWeapon(obj)) then return end
+
+
+    debug_print_table("equipped_ammos:", equipped_ammos)
+
     local diffs = {}
-    local ammos = get_all_ammos() or {}
-    debug("size of equipped_ammos = %s", size_table(equipped_ammos))
+    local ammos =  get_all_ammos() or {}
     if (size_table(equipped_ammos) > 0) then
 
-        debug("all ammos rn:")
-        print_table(ammos)
+        debug_print_table("all ammos: ", ammos)
 
         for ammo, _ in pairs(equipped_ammos) do
             if not ammos[ammo] then
@@ -401,10 +443,8 @@ end
     end
 
 
-    if not BLOCK_AMMO then return end
 
-    debug("diffs:")
-    print_table(diffs)
+    -- debug_print_table("diffs:", diffs)
 
     -- update cache to all currently equipped ammos
     copy_table(equipped_ammos, ammos)
@@ -415,11 +455,11 @@ end
         set_blocked(ammo, true)
     end
 
-    -- debug("ammos to remove:")
-    -- print_table(diffs)
+    -- debug_print_table("ammos to remove:", diffs)
 
-    debug("equipped_ammos after:")
-    print_table(equipped_ammos)
+    -- debug_print_table("equipped_ammos after:",equipped_ammos)
+
+
 end
 
 --#endregion
@@ -570,8 +610,7 @@ function refresh_config_file()
         ui_mcm.set("blockputall_extended/refresh_config", refresh_config)
     end
 
-    debug("blocked config:")
-    print_table(blocked_items)
+    debug_print_table("blocked config",blocked_items)
 end
 
 
@@ -593,6 +632,23 @@ function do_reset_blocked_items()
     refresh_config_file()
 end
 
+
+
+-- clean up save data
+-- version to version
+function cleanup(mdata)
+    -- local mdata = alife_storage_manager.get_state() or {}
+    local t = {}
+    if mdata.ym_move_all_blocker then
+        if VERSION > 0.5 then
+            mdata.ym_move_all_blocker.QUICKSTASH_BLOCKED_ITEMS = nil
+            mdata.ym_move_all_blocker.QUICKSTASH_FAVORITES = nil
+            mdata.ym_move_all_blocker.ENABLE = nil
+        end
+    end
+end
+
+--#endregion
 
 function on_option_change(mcm)
     if mcm then
@@ -623,31 +679,15 @@ function on_option_change(mcm)
     block_equipped_ammos()
 end
 
--- clean up save data
--- version to version
-function cleanup(mdata)
-    -- local mdata = alife_storage_manager.get_state() or {}
-    local t = {}
-    if mdata.ym_move_all_blocker then
-        if VERSION > 0.5 then
-            mdata.ym_move_all_blocker.QUICKSTASH_BLOCKED_ITEMS = nil
-            mdata.ym_move_all_blocker.QUICKSTASH_FAVORITES = nil
-            mdata.ym_move_all_blocker.ENABLE = nil
-        end
-    end
-end
-
---#endregion
-
-
-function on_game_start()
+function on_first_load()
     if ENABLE_CONFIG then
         refresh_config_file()
     end
-    debug("blocked config:")
-    print_table(blocked_items)
 
+    on_option_change(mcm_keybinds)
+end
 
+function on_game_start()
     -- function add_functor(name, cond_name, func_name, cond_action, func_action, override_bags)
     custom_functor_autoinject.add_functor("ym_moveallblocker", can_be_blocked, name_blockmove, nil, moveblock_menu_action, true )
 
@@ -660,7 +700,7 @@ function on_game_start()
     RegisterScriptCallback("actor_item_to_slot", block_equipped_ammos)
     RegisterScriptCallback("actor_on_item_drop", block_equipped_ammos)
 
-    on_option_change(mcm_keybinds)
+    RegisterScriptCallback("actor_on_first_update", on_first_load)
 end
 
 
