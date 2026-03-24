@@ -1,2 +1,12 @@
-# V1.2
+# v1.2
 - Option to auto block equipped ammos
+- Toggle on/off the block option
+- Better debugging
+- Full MCM menu with all options available
+- Config ltx to configure permanent, cross-save blocked items
+- Prevent blocked items from being stashed in QRS (with configurable options)
+- Proper working enable/disable mod button
+- Button to refresh config file
+- Button to reset in-game blocked items (does not touch config items)
+- Incorporated patch to keep Favorite items on QRS
+- Proper cleanup of save data

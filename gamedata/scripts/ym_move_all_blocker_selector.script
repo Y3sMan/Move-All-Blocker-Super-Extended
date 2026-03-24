@@ -332,6 +332,9 @@ end
 --#endregion
 
 --#region Ammo Blocking
+-- pulled from Haruka's Auto Favorites mod
+-- love that mod
+
 local slots = {
     [1] = true,
     [2] = true,
