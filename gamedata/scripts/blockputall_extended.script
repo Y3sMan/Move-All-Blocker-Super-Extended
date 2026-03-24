@@ -25,12 +25,15 @@ end
 
 -- stolen and modified from RavenAscendant's Sorting Plus
 function ActorMenu_on_item_before_move(flags, npc_id, obj, mode, bag)
+	local qrs = false
+	if string.find(obj:section(), "itm_actor_backpack") then qrs = true end
 	flags.ret_value = flags.ret_value and not (PUTALL and (
+		qrs or
 		BLOCKPUTALLFAVS and zzz_rax_sortingplus_mcm.is_favorite(obj:section()) or												-- block favorite items
 		BLOCKPUTALLJUNK and zzz_rax_sortingplus_mcm.is_junk(obj:section()) and player_stash_open or								-- block junk items
 		BLOCKPUTALLPART and unusable_parts_handler and unusable_parts_handler.is_unusable_part(obj) and player_stash_open or	-- block unusable part items
 		BLOCKPUTALLTASK and fetch_item_icon and fetch_item_icon.fetch_item_icon(nil, nil, obj:section()) or						-- block task items
-		ym_move_all_blocker_selector.blocked_items[obj:section()]		
+		ym_move_all_blocker_selector.is_blocked(obj:section())
 	))
 end
 

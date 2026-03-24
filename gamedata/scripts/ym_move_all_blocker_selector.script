@@ -1,6 +1,7 @@
 --[[
     Move-All Blocker
     Author: YesMan
+    Version: 1.2
 
     Adds an option to the right-click menu that blocks any item from being moved *out* of the player's inventory
     Does not affect Sorting or categories, or moving *into* player inventories.
@@ -9,10 +10,10 @@
 --]]
 
 
---#region ----------------------------------------
--- DEBUG
-----------------------------------------
+--#region DEBUG ----------------------------------------
+
 local modname = "Move All Blocker"
+local DEBUG = true
 
 local function print_table (tbl, indent)
     local g_type = type
@@ -52,13 +53,15 @@ local function print_table (tbl, indent)
     utils_data.debug_write(string.rep(" ", indent-2) .. "}")
 end	
 
--- Flattens a table of any nested status into a single string
+--- Flattens a table of any nested status into a single string
+---@param o table
+---@return string 
 local function dump_table(o)
    if type(o) == 'table' then
       local s = '{ '
       for k,v in pairs(o) do
          if type(k) ~= 'number' then k = '"'..k..'"' end
-         s = s .. '['..k..'] = ' .. dbg_dump(v) .. ','
+         s = s .. '['..k..'] = ' .. dump_table(v) .. ','
       end
       return s .. '} '
    else
@@ -67,35 +70,55 @@ local function dump_table(o)
 end
 
 
-local function log(log_type, output)
+local function log(log_type, output, ...)
+    if not DEBUG then return end
     if not output then
         utils_data.debug_write("[" .. modname .. "] "..log_type..": ".."(nil)")
+        callstack()
     elseif (type(output) == "table") then
         utils_data.debug_write("[" .. modname .. "] "..log_type..": ")
         print_table(output)
     else
-        utils_data.debug_write("[" .. modname .. "] "..log_type..": "..output)
+        -- pulled from _g.script
+        -- more var subbing
+        if (select('#', ...) >= 1) then
+            local i = 0
+            local p = { ... }
+            local function sr(a)
+                i = i + 1
+                if (type(p[i]) == 'userdata') then
+                    if (p[i].x and p[i].y) then
+                        return vec_to_str(p[i])
+                    end
+                    return 'userdata'
+                end
+                return tostring(p[i])
+            end
+            output = string.gsub(output, "%%s", sr)
+        end
+        printf("[" .. modname .. "] " .. log_type .. ": " .. output, ...)
     end
 end
 
-function debug(output)
-    log("DEBUG", output)
+function debug(output,...)
+    if not DEV_DEBUG then return end
+    log("DEBUG", output, ...)
 end
 
-function info(output)
-    log("INFO ", output)
+function info(output,...)
+    log("INFO ", output, ...)
 end
 
-function warn(output)
-    log("WARN ", output)
+function warn(output,...)
+    log("WARN ", output, ...)
 end
 
-function error(output)
-    log("ERROR", output)
+function error(output,...)
+    log("ERROR", output, ...)
 end
 
-function debug_tip(text, delay)
-    debug(text)
+function debug_tip(text, delay,...)
+    debug(text, ...)
 
     local text = "[" .. modname .. "] "..tostring(text)
 
@@ -114,9 +137,76 @@ function debug_tip(text, delay)
 
     news_manager.send_tip(db.actor, text, nil, ico, delay)
 end
+
+function open_specific_mcm(path)
+    if not DEBUG then return end
+
+    if ui_mcm then
+        exec_console_cmd("main_menu")
+
+        local function open_mcm_event(path)
+            ui_mcm.open_to(path)
+            return true
+        end
+
+
+        if demonized_time_events then
+            demonized_time_events.CreateTimeEvent("ym_open_mcm", "open_mcm",1, open_mcm_event, path)
+        else
+            CreateTimeEvent("ym_open_mcm", "open_mcm",1, open_mcm_event, path)
+        end
+    end
+end
+
 --#endregion------------------------------------------------------------------
 
---#region 
+
+
+
+
+local VERSION = 1.0
+
+-- mcm option to refresh config
+-- always resets to false after closing mcm
+local refresh_config = false
+local reset_blocked_items = false
+
+ENABLE = true
+ENABLE_CONFIG = false -- enable use of permanent blacklist config file
+-- whether to move blocked items into quick release stash
+QUICKSTASH_BLOCKED_ITEMS = true  -- true will keep blacklisted items in your inventory on qrs
+-- whether to move favorites into quick release stash
+QUICKSTASH_FAVORITES = true  -- true will keep favorite items in your inventory on qrs
+
+local mcm_keybinds = ui_mcm and ui_mcm.key_hold
+
+-- key to hold to show the dynamic option
+KEYBIND = DIK_keys.DIK_LCONTROL
+
+-- temporarily toggle having to hold the KEYBIND to show the block option
+-- true = always show
+-- false = you have to hold KEYBIND
+TOGGLE_KEYBIND = DIK_keys.DIK_R
+
+
+-- key held state vars
+KEY_HELD = false
+TOGGLE_HELD = false
+
+TOGGLE_HIDE = false  -- state control if block option is always shown or always hidden
+
+
+blocked_items = {} -- items blacklisted in-game go here
+cfg_blocked_items = {} -- items blacklisted via the config go here. Acts as cache
+
+gc = game.translate_string
+
+
+equipped_ammos = {} -- cache to keep track of all ammo for all equipped weapons
+BLOCK_AMMO = true
+
+--#region Table helpers
+
 local function merge_tables(tables)
     local final_table = {}
     if #tables > 0 then
@@ -132,69 +222,223 @@ local function merge_tables(tables)
     return final_table
 end
 
+-- Source - https://gist.github.com/sapphyrus/fd9aeb871e3ce966cc4b0b969f62f539?permalink_comment_id=4667958#gistcomment-4667958
+--- deeply compare two objects and return the diff
+function diff_tables(o1, o2)
+	-- same object
+	if o1 == o2 then return nil end
+
+	local o1Type = type(o1)
+	local o2Type = type(o2)
+	--- different type
+	if o1Type ~= o2Type then -- don't expand tables to make it more readable
+		return { _1 = o1Type == 'table' and o1Type or o1, _2 = o2Type == 'table' and o2Type or o2 }
+	end
+	--- same type but not table, already compared above
+	if o1Type ~= 'table' then return nil end
+
+	local diff = {}
+
+	-- iterate over o1
+	for key1, value1 in pairs(o1) do
+		local value2 = o2[key1]
+		diff[key1] = diff_tables(value1, value2)
+	end
+
+	--- check keys in o2 but missing from o1
+	for key2, value2 in pairs(o2) do
+		diff[key2] = diff_tables(nil, value2)
+	end
+	local gen, param, state = pairs(diff)
+	if gen(param, state) ~= nil then
+		return diff
+	else
+		return nil
+	end
+end
+
+-- function diff_tables(t1, t2)
+--     -- local t =  dup_table(t1, t2) 
+--     local diff = {}
+
+--     for k,v in t1 do
+--         if not t2[v] then
+--             diff[v] = true
+--         end
+--     end
+-- end
+
 
 
 --#endregion
 
--- whether to move blocked items into quick release stash
-QUICKSTASH_BLOCKED_ITEMS = false  -- false will keep blacklisted items in your inventory on qrs
--- whether to move favorites into quick release stash
-QUICKSTASH_FAVORITES = false  -- false will keep favorite items in your inventory on qrs
 
 
-blocked_items = {}
-gc = game.translate_string
+--#region Item Blocking
 
+---Return a table merged from blocked_items and cfg_blocked_items
+---@return table
+function get_all_blocked_items()
+    local new_blocked_items = merge_tables({cfg_blocked_items, blocked_items}) or blocked_items
+    return new_blocked_items
+end
+
+---Return just in-game blocked_items
+---@return table
 function get_blocked_items()
     return blocked_items
 end
 
+---Completely overwrite blocked_items, if you want
+---@param new_blocked table
 function set_blocked_items(new_blocked)
     blocked_items = new_blocked or blocked_items
 end
 
-
-local function save_state(mdata)
-    local t = {}
-    t.blocked_items = blocked_items
-    t.QUICKSTASH_BLOCKED_ITEMS = QUICKSTASH_BLOCKED_ITEMS
-    t.QUICKSTASH_FAVORITES = QUICKSTASH_FAVORITES
-
-    mdata.ym_move_all_blocker = t
+---Checks if item is in any blocked lists
+---@param sec string: Section of the item
+---@return boolean
+function is_blocked(sec)
+    local blocked = get_all_blocked_items()
+    return blocked[sec] and true or false
 end
 
-local function load_state(mdata)
-    local t = mdata.ym_move_all_blocker
-    if t then
-        -- blocked_items = t.blocked_items or {}
-        local new_t = t.blocked_items or {}
-        blocked_items = merge_tables({ blocked_items, new_t }) or blocked_items
-        QUICKSTASH_BLOCKED_ITEMS = t.QUICKSTASH_BLOCKED_ITEMS or false
-        QUICKSTASH_FAVORITES = t.QUICKSTASH_FAVORITES or false
+
+--#endregion
+
+--#region Inventory Key Management
+
+local KEY_PRESSED = ui_events.WINDOW_KEY_PRESSED
+local KEY_RELEASED = ui_events.WINDOW_KEY_RELEASED
+
+local _inv = ui_inventory.UIInventory.OnKeyboard
+function ui_inventory.UIInventory:OnKeyboard(dik, keyboard_action)
+	if keyboard_action == KEY_PRESSED then
+        if (dik == KEYBIND) then
+            KEY_HELD = true
+        elseif (dik == TOGGLE_KEYBIND) then
+            if KEY_HELD then 
+                TOGGLE_HIDE = not TOGGLE_HIDE
+            end
+        end
+	elseif keyboard_action == KEY_RELEASED then
+        if (dik == KEYBIND) then
+            KEY_HELD = false 
+        end
     end
+	return _inv(self, dik, keyboard_action)
 end
 
+--#endregion
+
+--#region Ammo Blocking
+local slots = {
+    [1] = true,
+    [2] = true,
+    [3] = true,
+    [5] = true
+}
+
+local get_ammo = utils_item.get_ammo -- (section, id, by_key)
+
+---Gets all ammos for all currently equipped ammos
+---@return table[String]: table of sections
+function get_all_ammos()
+    local g_pairs = pairs
+    local ammos = {}
+
+    for slot, _ in g_pairs(slots) do
+        local wpn = db.actor:item_in_slot(slot)
+        if wpn and not (IsItem("fake_ammo_wpn",wpn:section())) then
+            local sec = wpn:section()
+            local ammo_list = get_ammo(nil, wpn:id(), true)
+            for ammo, _ in g_pairs(ammo_list) do
+                ammos[ammo] = true
+            end
+        end
+    end
+
+    return ammos
+end
+
+function block_equipped_ammos()
+    debug("equipped_ammos:")
+    print_table(equipped_ammos)
+
+    local diffs = {}
+    local ammos = get_all_ammos() or {}
+    debug("size of equipped_ammos = %s", size_table(equipped_ammos))
+    if (size_table(equipped_ammos) > 0) then
+
+        debug("all ammos rn:")
+        print_table(ammos)
+
+        for ammo, _ in pairs(equipped_ammos) do
+            if not ammos[ammo] then
+                diffs[ammo] = true
+                -- unblock no longer equipped ammos
+                set_blocked(ammo, false)
+            end
+        end
+
+        -- clear cache
+        empty_table(equipped_ammos)
+    end
+
+
+    if not BLOCK_AMMO then return end
+
+    debug("diffs:")
+    print_table(diffs)
+
+    -- update cache to all currently equipped ammos
+    copy_table(equipped_ammos, ammos)
+    -- 
+
+    -- block new ammos
+    for ammo, _ in pairs(equipped_ammos) do
+        set_blocked(ammo, true)
+    end
+
+    -- debug("ammos to remove:")
+    -- print_table(diffs)
+
+    debug("equipped_ammos after:")
+    print_table(equipped_ammos)
+end
+
+--#endregion
 
 
 --#region context menu function
+
+---Toggle the blocked status of an item
+---@param sec string: The section of the item 
+---@param state boolean: Whether to block(true) or unblock(false) an item
 function set_blocked(sec, state)
     if state then
-        blocked_items[sec] = "blocked"
+        if not cfg_blocked_items[sec] then
+            blocked_items[sec] = "blocked"
+        end
     else
-        blocked_items[sec] = nil
+        if blocked_items[sec] then
+            blocked_items[sec] = nil
+        elseif cfg_blocked_items[sec] then
+            cfg_blocked_items[sec] = nil
+        end
     end
 end
 
-function is_blocked(sec)
-    return blocked_items[sec] and true or false
-end
 
 
 --[[
    name_condition_function: function, the condition at which you will get your right-click option for item
 --]]
 function can_be_blocked(itm)
-    return true
+    debug("key_held = %s", KEY_HELD)
+    debug("toggle = %s", TOGGLE_HIDE)
+
+    return (not TOGGLE_HIDE) or KEY_HELD
 end
 
 --[[
@@ -202,6 +446,8 @@ end
     if set to return nil, the option won't appear
 --]]
 function name_blockmove(obj)
+    if not ENABLE then return nil end
+
     if is_blocked(obj:section()) then
         return gc("st_move_all_unblock")
     else
@@ -226,7 +472,7 @@ override_bags = false
 
 --#endregion
 
---#region Quick Release
+--#region Quick Release (qrs)
 --[[
 Shamelessly Stolen from Toxox's Mini Mods Repo
 Go download it
@@ -261,20 +507,23 @@ item_backpack.actor_on_item_use = function(obj)
 	-- Assign original keep items
 	keep_items_script.keep_items = dup_table(orig_keep_items)
 
+    -- local new_blocked_items = merge_tables({cfg_blocked_items, blocked_items}) or blocked_items
+
 	-- Add current favorites
     debug("BLocked items")
     print_table(blocked_items)
-    debug("keep items")
-    print_table(keep_items_script.keep_items)
-    if not QUICKSTASH_BLOCKED_ITEMS then
+    if  QUICKSTASH_BLOCKED_ITEMS then
         for k, _ in pairs(blocked_items) do
             debug("k = " .. tostring(k))
             debug("v = " .. tostring(_))
             keep_items_script.keep_items[k] = true
         end
+        debug("keep items")
+        print_table(keep_items_script.keep_items)
     end
 
-    if not QUICKSTASH_FAVORITES or not zzz_rax_sortingplus_mcm then
+    -- just added my own "Keep Favorites" right here, save a mod in my load order
+    if  QUICKSTASH_FAVORITES or not zzz_rax_sortingplus_mcm then
         for k, _ in pairs(zzz_rax_sortingplus_mcm.favorite_itms) do
             debug("k = " .. tostring(k))
             debug("v = " .. tostring(_))
@@ -292,10 +541,152 @@ function load_settings()
 end
 
 
-function on_game_start()
-	local ini_stash = ini_file("items\\settings\\ym_move_all_blocked_items.ltx")
-    blocked_items = utils_data.collect_section(ini_stash,"ym_blocked_items",true)
 
+function save_state(mdata)
+    local t = {}
+    t.blocked_items = blocked_items
+    t.TOGGLE_HIDE = TOGGLE_HIDE or false
+    t.cfg_cache = cfg_blocked_items
+    t.equipped_ammos = equipped_ammos
+
+    -- old v < 1.0
+    -- t.QUICKSTASH_BLOCKED_ITEMS = QUICKSTASH_BLOCKED_ITEMS
+    -- t.QUICKSTASH_FAVORITES = QUICKSTASH_FAVORITES
+    -- t.ENABLE = ENABLE
+
+    mdata.ym_move_all_blocker = t
+end
+
+function load_state(mdata)
+    cleanup(mdata)
+
+    local t = mdata.ym_move_all_blocker
+    if t then
+        blocked_items = t.blocked_items or {}
+        local new_t = t.blocked_items or {}
+        blocked_items = merge_tables({ blocked_items, new_t }) or blocked_items
+
+        TOGGLE_HIDE = t.TOGGLE_HIDE or TOGGLE_HIDE
+
+        cfg_blocked_items = t.cfg_cache or {}
+
+        equipped_ammos = t.equipped_ammos or {}
+
+        -- oldv < 1.0
+        -- QUICKSTASH_BLOCKED_ITEMS = t.QUICKSTASH_BLOCKED_ITEMS or false
+        -- QUICKSTASH_FAVORITES = t.QUICKSTASH_FAVORITES or false
+    end
+end
+
+--#region Config stuff
+
+
+---Remove unadded entries from config cache
+---
+---Then remove them from blocked_items
+function cleanup_cfg_blocked_items()
+	local ini_stash = ini_file("items\\settings\\ym_move_all_blocked_items.ltx")
+    local new_cfg_blocked_items = utils_data.collect_section(ini_stash,"ym_blocked_items",true) or {}
+
+    for k, v in pairs(cfg_blocked_items) do
+        if (not new_cfg_blocked_items[k]) and (blocked_items[k]) then
+            blocked_items[k] = nil
+        end
+    end
+end
+
+
+function refresh_config_file()
+
+    -- cleanup removed entries from cfg cache
+    cleanup_cfg_blocked_items()
+
+    -- add new entries to cfg cache
+	local ini_stash = ini_file("items\\settings\\ym_move_all_blocked_items.ltx")
+    cfg_blocked_items = utils_data.collect_section(ini_stash,"ym_blocked_items",true) or {}
+
+    -- combine with in-game table blocked_items
+    blocked_items = merge_tables({cfg_blocked_items, blocked_items}) or blocked_items
+
+
+    -- reset mcm refresh button
+    refresh_config = false
+    if ui_mcm then
+        ui_mcm.set("blockputall_extended/refresh_config", refresh_config)
+    end
+
+    debug("blocked config:")
+    print_table(blocked_items)
+end
+
+
+---Reset in-game-set blacklist.
+---
+---Does not affect items listed in config file
+function do_reset_blocked_items()
+    -- blocked_items = nil
+    empty_table(blocked_items)
+    blocked_items = blocked_items or {}
+
+    -- reset mcm Reset button
+    reset_blocked_items = false
+    if ui_mcm then
+        ui_mcm.set("blockputall_extended/reset_blocked_items", reset_blocked_items)
+    end
+
+    -- refresh config and cache
+    refresh_config_file()
+end
+
+
+function on_option_change(mcm)
+    if mcm then
+		ENABLE	= ui_mcm.get("blockputall_extended/super_block_enable")
+		QUICKSTASH_BLOCKED_ITEMS	= ui_mcm.get("blockputall_extended/QUICKSTASH_BLOCKED_ITEMS")
+		QUICKSTASH_FAVORITES	= ui_mcm.get("blockputall_extended/QUICKSTASH_FAVORITES")
+        refresh_config = ui_mcm.get("blockputall_extended/refresh_config")
+        reset_blocked_items = ui_mcm.get("blockputall_extended/reset_blocked_items")
+        TOGGLE_KEYBIND = ui_mcm.get("blockputall_extended/toggle_keybind")
+        KEYBIND = ui_mcm.get("blockputall_extended/show_modifier")
+        ENABLE_CONFIG =  ui_mcm.get("blockputall_extended/enable_config_file")
+        BLOCK_AMMO =  ui_mcm.get("blockputall_extended/BLOCK_AMMO")
+    end
+
+    if refresh_config or ENABLE_CONFIG then
+        refresh_config_file()
+    end
+
+    if reset_blocked_items then
+        do_reset_blocked_items()
+    end
+
+    -- recheck blocked status for ammos
+    block_equipped_ammos()
+end
+
+-- clean up save data
+-- version to version
+function cleanup(mdata)
+    -- local mdata = alife_storage_manager.get_state() or {}
+    local t = {}
+    if mdata.ym_move_all_blocker then
+        if VERSION > 0.5 then
+            mdata.ym_move_all_blocker.QUICKSTASH_BLOCKED_ITEMS = nil
+            mdata.ym_move_all_blocker.QUICKSTASH_FAVORITES = nil
+            mdata.ym_move_all_blocker.ENABLE = nil
+        end
+    end
+end
+
+--#endregion
+
+
+function on_game_start()
+    if ENABLE_CONFIG then
+        refresh_config_file()
+    end
+    debug("blocked config:")
+    print_table(blocked_items)
 
 
     -- function add_functor(name, cond_name, func_name, cond_action, func_action, override_bags)
@@ -303,8 +694,14 @@ function on_game_start()
 
     RegisterScriptCallback("load_state", load_state)
     RegisterScriptCallback("save_state", save_state)
-	-- RegisterScriptCallback("GUI_on_show", GUI_on_show)
-	-- RegisterScriptCallback("ActorMenu_on_item_before_move", ActorMenu_on_item_before_move)
+    RegisterScriptCallback("on_option_change", on_option_change)
+
+    -- ammo management
+    RegisterScriptCallback("actor_item_to_ruck", block_equipped_ammos)
+    RegisterScriptCallback("actor_item_to_slot", block_equipped_ammos)
+    RegisterScriptCallback("actor_on_item_drop", block_equipped_ammos)
+
+    on_option_change(mcm_keybinds)
 end
 
 
