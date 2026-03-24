@@ -350,6 +350,8 @@ function get_all_ammos()
     local g_pairs = pairs
     local ammos = {}
 
+    if not db.actor then return {} end
+
     for slot, _ in g_pairs(slots) do
         local wpn = db.actor:item_in_slot(slot)
         if wpn and not (IsItem("fake_ammo_wpn",wpn:section())) then
