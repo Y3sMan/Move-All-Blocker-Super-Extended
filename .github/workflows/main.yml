@@ -6,6 +6,10 @@ on:
 
 name: Create and Publish Release
 
+permissions:
+  contents: write
+  actions: write
+
 
 jobs:
   build:
