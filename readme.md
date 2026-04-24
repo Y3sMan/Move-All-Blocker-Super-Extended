@@ -15,6 +15,7 @@
 - An MCM menu to configure just about everything
 - And, if things get out of hand, an option to clear your list of blocked items, to start fresh once more.
 - Built-in compatibility with *Haruka*'s **Auto Favorite Ammos** mod
+- And for fun, if you block Junk items, they still move to the bottom of your inventory, but will still be blocked. Unintended, but I now use it to mark that stupid psi helmet Junk, move it out of sight, but it stays on me at all times. Neat!
 
 # How To Use
 ## To Block an Item:
@@ -58,6 +59,9 @@
   - Haruka's **Auto Favorite Ammos** mod:
     - Patch built-in. Enable/disable in MCM
   - If you find something else, let me know! Report bugs!
+# Known Issues
+  (Please report bugs, and include logs, I really appreciate it!)
+  - If you have the block option hidden, and hold your modifier to temporarily show it, sometimes it "sticks;" it will remain shown until you press your modifier again. I'm working on fixes
 # Source
   Find the source code here:
   https://github.com/Y3sMan/Move-All-Blocker-Super-Extended
