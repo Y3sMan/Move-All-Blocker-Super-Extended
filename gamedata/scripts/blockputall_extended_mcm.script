@@ -27,8 +27,8 @@ function on_mcm_load()
             },
 
             {id = "super_block_enable", type = "check", val = 1, def = true},
-            { id = "QUICKSTASH_BLOCKED_ITEMS", type = "check", val = 1, def = false },
-            {id = "QUICKSTASH_FAVORITES", type = "check", val = 1, def = false},
+            { id = "QUICKSTASH_BLOCKED_ITEMS", type = "check", val = 1, def = true },
+            {id = "QUICKSTASH_FAVORITES", type = "check", val = 1, def = true},
             {
                 id = "show_modifier",
                 type = "key_bind",
