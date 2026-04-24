@@ -183,16 +183,12 @@ local mcm_keybinds = ui_mcm and ui_mcm.key_hold
 -- hold this to show the context menu option
 KEYBIND = DIK_keys.DIK_LCONTROL
 
--- temporarily toggle having to hold the KEYBIND to show the block option
--- true = always show
--- false = you have to hold KEYBIND
+-- press this, while holding KEYBIND, to show/hide the context menu option
 TOGGLE_KEYBIND = DIK_keys.DIK_R
 
 
 -- key held state vars
-KEY_HELD = false
-TOGGLE_HELD = false
-
+KEY_HELD = false -- whether KEYBIND is held down 
 TOGGLE_HIDE = false  -- state control if block option is always shown or always hidden
 
 
