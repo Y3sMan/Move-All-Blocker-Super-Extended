@@ -27,8 +27,8 @@ function on_mcm_load()
             },
 
             {id = "super_block_enable", type = "check", val = 1, def = true},
-            { id = "QUICKSTASH_BLOCKED_ITEMS", type = "check", val = 1, def = false },
-            {id = "QUICKSTASH_FAVORITES", type = "check", val = 1, def = false},
+            { id = "QUICKSTASH_BLOCKED_ITEMS", type = "check", val = 1, def = true },
+            {id = "QUICKSTASH_FAVORITES", type = "check", val = 1, def = true},
             {
                 id = "show_modifier",
                 type = "key_bind",
@@ -45,6 +45,17 @@ function on_mcm_load()
             {id = "enable_config_file", type = "check", val = 1, def = false},
             {id = "refresh_config", type = "check", val = 1, def = false},
             {id = "reset_blocked_items", type = "check", val = 1, def = false},
+
+            {
+                id = "YM_SUPER_BLOCK_haruka_patch",
+                type = "slide",
+                link = "ui_options_slider_economy_diff",
+                text = "ui_mcm_moveblock_super_extended_haruka_autofav_patch",
+                size = {512, 50},
+                spacing = 20
+            },
+
+            {id = "enable_haruka_patch", type = "check", val = 1, def = false},
 
         }
     }
