@@ -180,7 +180,7 @@ QUICKSTASH_FAVORITES = true  -- true will keep favorite items in your inventory 
 
 local mcm_keybinds = ui_mcm and ui_mcm.key_hold
 
--- key to hold to show the dynamic option
+-- hold this to show the context menu option
 KEYBIND = DIK_keys.DIK_LCONTROL
 
 -- temporarily toggle having to hold the KEYBIND to show the block option
