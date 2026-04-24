@@ -13,7 +13,7 @@
 - A config file to block items across all your characters and saves, for those things you always want blocked from now to the end of time
 - Edit and refresh the config file **while in-game**
 - An MCM menu to configure just about everything
-- An, if things get out of hand, an option to clear your list of blocked items, to start fresh once more.
+- And, if things get out of hand, an option to clear your list of blocked items, to start fresh once more.
 - Built-in compatibility with *Haruka*'s **Auto Favorite Ammos** mod
 
 # How To Use
