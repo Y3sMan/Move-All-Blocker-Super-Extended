@@ -327,6 +327,12 @@ function ui_inventory.UIInventory:OnKeyboard(dik, keyboard_action)
 	return _inv(self, dik, keyboard_action)
 end
 
+function on_key_release(dik)
+    if (dik == KEYBIND) then
+        KEY_HELD = false
+    end
+end
+
 --#endregion
 
 --#region Ammo Blocking
@@ -740,6 +746,7 @@ function on_game_start()
     RegisterScriptCallback("save_state", save_state)
     RegisterScriptCallback("on_option_change", on_option_change)
     RegisterScriptCallback("actor_on_first_update", on_first_update)
+    RegisterScriptCallback("on_key_release", on_key_release)
 
     -- ammo management
     RegisterScriptCallback("actor_item_to_ruck", block_equipped_ammos)
