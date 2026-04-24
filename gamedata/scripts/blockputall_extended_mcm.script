@@ -46,6 +46,17 @@ function on_mcm_load()
             {id = "refresh_config", type = "check", val = 1, def = false},
             {id = "reset_blocked_items", type = "check", val = 1, def = false},
 
+            {
+                id = "YM_SUPER_BLOCK_haruka_patch",
+                type = "slide",
+                link = "ui_options_slider_economy_diff",
+                text = "ui_mcm_moveblock_super_extended_haruka_autofav_patch",
+                size = {512, 50},
+                spacing = 20
+            },
+
+            {id = "enable_haruka_patch", type = "check", val = 1, def = false},
+
         }
     }
     return options

@@ -205,6 +205,8 @@ gc = game.translate_string
 equipped_ammos = {} -- cache to keep track of all ammo for all equipped weapons
 BLOCK_AMMO = true
 
+PATCH_HARUKA = false -- patch haruka's ammo_autofav to ignore ammo favoriting
+
 --#region Table helpers
 
 local function merge_tables(tables)
@@ -538,6 +540,40 @@ end
 
 --#endregion
 
+--#region Haruka's Auto Favorites Patch
+---Patch ammo_autofav.script by overriding `get_ammo` to only return an empty list
+function auto_favorites_patch()
+    if ammo_autofav and ammo_autofav.get_ammo then
+        ammo_autofav.get_ammo = function()
+            return {}
+        end
+    end
+end
+
+---Revert Haruka patch
+function auto_favorites_unpatch()
+    if ammo_autofav and ammo_autofav.get_ammo then
+        ammo_autofav.get_ammo = utils_item.get_ammo
+    end
+end
+
+--#endregion
+
+--#region Patches
+
+function patches()
+    if PATCH_HARUKA then
+        auto_favorites_patch()  
+    end
+end
+
+--#endregion
+
+
+function on_first_update()
+    patches()
+end
+
 
 function load_settings()
 end
@@ -652,14 +688,24 @@ function on_option_change(mcm)
         KEYBIND = ui_mcm.get("blockputall_extended/show_modifier")
         ENABLE_CONFIG =  ui_mcm.get("blockputall_extended/enable_config_file")
         BLOCK_AMMO =  ui_mcm.get("blockputall_extended/BLOCK_AMMO")
+        PATCH_HARUKA = ui_mcm.get("blockputall_extended/enable_haruka_patch")
     end
 
+    -- refresh config ltx
     if refresh_config or ENABLE_CONFIG then
         refresh_config_file()
     end
 
+    -- wipe blacklist
     if reset_blocked_items then
         do_reset_blocked_items()
+    end
+
+    -- haruka patch
+    if PATCH_HARUKA then
+        auto_favorites_patch()  
+    else
+        auto_favorites_unpatch()
     end
 
     -- recheck blocked status for ammos
@@ -697,6 +743,7 @@ function on_game_start()
     RegisterScriptCallback("load_state", load_state)
     RegisterScriptCallback("save_state", save_state)
     RegisterScriptCallback("on_option_change", on_option_change)
+    RegisterScriptCallback("actor_on_first_update", on_first_update)
 
     -- ammo management
     RegisterScriptCallback("actor_item_to_ruck", block_equipped_ammos)

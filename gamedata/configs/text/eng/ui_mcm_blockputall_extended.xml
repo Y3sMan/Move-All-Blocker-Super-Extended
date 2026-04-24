@@ -90,7 +90,7 @@
 	</string>
 
 	<string id="ui_mcm_blockputall_extended_reset_blocked_items">
-		<text>%c[255,255,0,0]Reset Blocked Items%c[255,255,255,255]</text>
+		<text>Reset Blocked Items</text>
 	</string>
 
 	<string id="ui_mcm_blockputall_extended_reset_blocked_items_desc">
@@ -125,6 +125,16 @@
 		<text>Enable to automatically block ammos for all your equipped weapons. Will overwrite any manually blocked ammos, if you equip then unequip the corresponding gun.</text>
 	</string>
 
+	<string id="YM_SUPER_BLOCK_haruka_patch">
+		<text>Haruka's Auto Favorites Patch</text>
+	</string>
 
+	<string id="ui_mcm_blockputall_extended_enable_haruka_patch">
+		<text>Enable Auto Favorite Patch</text>
+	</string>
+
+	<string id="ui_mcm_blockputall_extended_enable_haruka_patch_desc">
+		<text>Patches Haruka's Auto Favorites Mod to prevent ammo from being favorited. Any auto-favorited ammo will be unfavorited; any manually favorited ammos will be safe</text>
+	</string>
 
 </string_table>
